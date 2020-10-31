@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_weight="3"
+    android:orientation="vertical"
+    tools:context=".speech_to_text">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:layout_width="match_parent">
+
+        <EditText
+            android:id="@+id/text_view_id"
+            android:inputType="textCapSentences|textMultiLine"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_marginBottom="60dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp">
+
+            <Chronometer
+                android:id="@+id/record_timer"
+                android:paddingTop="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/amatica_sc_bold"
+                android:textSize="30dp">
+            </Chronometer>
+
+            <ImageButton
+                android:id="@+id/stop_rec"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/stoprec"
+                android:layout_marginLeft="50dp"
+                android:padding="20dp" />
+
+            <Button
+                android:id="@+id/save_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="50dp"
+                android:paddingBottom="10dp"
+                android:text="SAVE TRANSCRIPT"/>
+
+
+
+    </LinearLayout>
+
+</LinearLayout>
