@@ -75,8 +75,7 @@ public class speech_to_text extends Fragment implements View.OnClickListener {
     private static final String TAG = "MyStt3Activity";
     private static final int  WRITE_EXTERNAL_STORAGE_CODE = 1;
 
-    String mtext;
-    File tFile;
+    static int counter = 0;
 
     private ProgressDialog mProgress;
     private StorageReference mStorage;
@@ -89,6 +88,7 @@ public class speech_to_text extends Fragment implements View.OnClickListener {
 
 
     public speech_to_text() {
+        counter++;
         // Required empty public constructor
     }
 
@@ -142,27 +142,18 @@ public class speech_to_text extends Fragment implements View.OnClickListener {
 
 
         mFileName = getActivity().getExternalFilesDir("/").getAbsolutePath();
+        String date =  DateFormat.getDateTimeInstance().format(System.currentTimeMillis());
         int entryNumber = 1;
 
-        File mFile = new File(mFileName + "/AudioRecording_" + entryNumber + ".3gp");
+        File mFile = new File(mFileName , "Audio" + entryNumber);
         while(mFile.exists()) {
             entryNumber++;
-            mFile = new File(mFileName + "/AudioRecording_" + entryNumber + ".3gp");
+            mFile = new File(mFileName, "Audio" + entryNumber );
         }
         mFileName = mFile.getAbsolutePath();
 
 
-        tFileName =  Environment.getExternalStorageDirectory().getAbsolutePath();
-//        int entryNumber1 = 1;
-//
-//        File tFile = new File(tFileName + "/SpeechToText" + entryNumber1 + ".txt");
-//        while(tFile.exists()) {
-//            entryNumber1++;
-//            tFile = new File(tFileName + "/SpeechToText" + entryNumber1 + ".txt");
-//        }
-//        tFileName = tFile.getAbsolutePath();
-
-         fileEvents = new File(getActivity().getFilesDir()+"/text/sample");
+        //fileEvents = new File(Environment.getExternalStorageDirectory().getAbsolutePath() +"/"+"File.txt");
         mediaRecorder = new MediaRecorder();
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.DEFAULT);
@@ -191,7 +182,6 @@ public class speech_to_text extends Fragment implements View.OnClickListener {
 
             case R.id.save_text:
                 saveText();
-                uploadText();
 
         }
 
@@ -199,20 +189,35 @@ public class speech_to_text extends Fragment implements View.OnClickListener {
 
     private void saveText(){
 
-        file = new File(getActivity().getFilesDir(), "text");
-            try {
-                File gpxfile = new File(file, "sample");
-                FileWriter writer = new FileWriter(gpxfile);
-                writer.append(transcript.getText().toString());
-                writer.flush();
-                writer.close();
-                Toast.makeText(this.getActivity(), "Saved your text", Toast.LENGTH_LONG).show();
-            } catch (Exception e) {
-
-            }
-
-
+        fileEvents = new File(Environment.getExternalStorageDirectory().getAbsolutePath() +"/"+"File.txt");
+        try {
+            BufferedWriter fos = new BufferedWriter(new FileWriter(fileEvents));
+            String get_transcript =transcript.getText().toString();
+            fos.write(get_transcript);
+            fos.close();
+            Toast.makeText(this.getActivity(), "Saved", Toast.LENGTH_LONG);
+        } catch (Exception e) {
+            Toast.makeText(this.getActivity(),e.getMessage(),Toast.LENGTH_LONG);
         }
+
+        mProgress.setMessage("Uploading Text");
+        mProgress.show();
+
+        Uri FileUri = Uri.fromFile(new File(String.valueOf(fileEvents)));
+        StorageMetadata metadata = new StorageMetadata.Builder()
+                .setContentType("text/plain")
+                .build();
+        StorageReference Folder = mStorage.child( "Audio"+ (counter));
+
+        UploadTask  up = Folder.putFile(FileUri, metadata);
+        up.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                mProgress.dismiss();
+                Toast.makeText(getActivity(), "File Uploaded", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 
 
 
@@ -224,89 +229,63 @@ public class speech_to_text extends Fragment implements View.OnClickListener {
     }
 
     private void uploadAudio() {
-        mProgress.setMessage("Uploading Audio");
-        mProgress.show();
-
-
-        Uri FileUri = Uri.fromFile(new File(mFileName));
-        String date =  DateFormat.getDateTimeInstance().format(System.currentTimeMillis());
-// Create file metadata including the content type
-        StorageMetadata metadata = new StorageMetadata.Builder()
-                .setContentType("audio/AMR")
-                .build();
-
-        StorageReference Folder = mStorage.child("Recording "+ date );
-
-        UploadTask  up = Folder.putFile(FileUri, metadata);
-
-        up.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-            @Override
-            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                mProgress.dismiss();
-                Folder.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-                    @Override
-                    public void onSuccess(Uri uri) {
-                        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("audio").push();
-                        Map<String, Object> map = new HashMap<>();
-                        //map.put("title", editText.getText().toString());
-                        map.put("id", databaseReference.getKey());
-                        map.put("audiolink", String.valueOf(uri));
-
-                        databaseReference.setValue(map);
-
-                        Toast.makeText(getActivity(), "File Uploaded", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-        });
-    }
-
-
-    private void uploadText() {
         mProgress.setMessage("Uploading Text");
         mProgress.show();
 
-
-        Uri FileUri = Uri.fromFile(new File(String.valueOf(fileEvents)));
-        String date =  DateFormat.getDateTimeInstance().format(System.currentTimeMillis());
-        // Create file metadata including the content type
+        Uri FileUri = Uri.fromFile(new File(mFileName));
         StorageMetadata metadata = new StorageMetadata.Builder()
-                .setContentType("text/plain")
+                .setContentType("audio/AMR")
                 .build();
+        StorageReference Folder = mStorage.child( "Audio"+ (counter) );
 
-        StorageReference Folder = mStorage.child("Text "+ date );
-
-
-
-        // Upload the file and metadata
         UploadTask  up = Folder.putFile(FileUri, metadata);
-
         up.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                 mProgress.dismiss();
-                Folder.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-                    @Override
-                    public void onSuccess(Uri uri) {
-                        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("text").push();
-                        Map<String, Object> map = new HashMap<>();
-                        //map.put("title", editText.getText().toString());
-                        map.put("id", databaseReference.getKey());
-                        map.put("textlink", String.valueOf(uri));
-
-                        databaseReference.setValue(map);
-
-                        Toast.makeText(getActivity(), "Text File Uploaded", Toast.LENGTH_SHORT).show();
-                    }
-                });
+                Toast.makeText(getActivity(), "File Uploaded", Toast.LENGTH_SHORT).show();
             }
         });
     }
+
+
+//    private void uploadText() {
+//        mProgress.setMessage("Uploading Text");
+//        mProgress.show();
+//
+//        Uri FileUri = Uri.fromFile(new File(String.valueOf(fileEvents)));
+//        StorageMetadata metadata = new StorageMetadata.Builder()
+//                .setContentType("text/plain")
+//                .build();
+//        StorageReference Folder = mStorage.child(" Audio"+ (counter) );
+//        UploadTask  up = Folder.putFile(FileUri, metadata);
+//
+//        up.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+//            @Override
+//            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+//                mProgress.dismiss();
+//                Folder.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+//                    @Override
+//                    public void onSuccess(Uri uri) {
+//                        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("text").push();
+//                        Map<String, Object> map = new HashMap<>();
+//                        //map.put("title", editText.getText().toString());
+//                        map.put("id", databaseReference.getKey());
+//                        map.put("textlink", String.valueOf(uri));
+//
+//                        databaseReference.setValue(map);
+//
+//                        Toast.makeText(getActivity(), "Text File Uploaded", Toast.LENGTH_SHORT).show();
+//                    }
+//                });
+//            }
+//        });
+//    }
 
     @Override
     public void onStop() {
         super.onStop();
-            stopRecording();
+           // stopRecording();
     }
 
 

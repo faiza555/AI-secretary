@@ -14,6 +14,7 @@
  import androidx.fragment.app.Fragment;
  import androidx.navigation.NavController;
  import androidx.navigation.Navigation;
+ import androidx.recyclerview.widget.ItemTouchHelper;
  import androidx.recyclerview.widget.LinearLayoutManager;
  import androidx.recyclerview.widget.RecyclerView;
 
@@ -35,6 +36,7 @@
  import com.firebase.ui.database.SnapshotParser;
  import com.google.android.gms.tasks.OnFailureListener;
  import com.google.android.gms.tasks.OnSuccessListener;
+ import com.google.android.material.snackbar.Snackbar;
  import com.google.firebase.database.DataSnapshot;
  import com.google.firebase.database.DatabaseError;
  import com.google.firebase.database.DatabaseReference;
@@ -106,13 +108,7 @@
 
          navController = Navigation.findNavController(view);
          note_btn = view.findViewById(R.id.summarize_btn);
-         //note_btn = view.findViewById(R.layout.single_list_item);
 
-         //note_btn.setOnClickListener( audioListAdapter);
-
-         mFileName = Environment.getExternalStorageDirectory().getAbsolutePath();
-
-        // String path = Objects.requireNonNull(requireActivity().getExternalFilesDir("/")).getAbsolutePath();
          String path = getActivity().getExternalFilesDir("/").getAbsolutePath();
          File directory = new File(path);
          //File directory = new File(mFileName);
@@ -122,9 +118,9 @@
 
          audioList.setHasFixedSize(false);
          audioList.setLayoutManager(new LinearLayoutManager(getContext()));
-         audioList.setAdapter(audioListAdapter);
+         //audioList.setAdapter(audioListAdapter);
 
-
+         enableSwipeToDeleteAndUndo();
 
         playBtn.setOnClickListener(new View.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -167,7 +163,7 @@
 
             }
         });
-
+         audioList.setAdapter(audioListAdapter);
      }
 
 //     @Override
@@ -277,6 +273,21 @@
          }
      }
 
+     private void enableSwipeToDeleteAndUndo() {
+         SwipeToDeleteCallback swipeToDeleteCallback = new SwipeToDeleteCallback(getContext()) {
+             @Override
+             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int i) {
 
+                 final int position = viewHolder.getAdapterPosition();
+//                 final String item = audioListAdapter.getData().get(position);
+
+                 audioListAdapter.removeItem(position);
+
+             }
+         };
+
+         ItemTouchHelper itemTouchhelper = new ItemTouchHelper(swipeToDeleteCallback);
+         itemTouchhelper.attachToRecyclerView(audioList);
+     }
 
  }

@@ -7,6 +7,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import android.content.Intent;
 import android.graphics.drawable.AnimationDrawable;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -35,6 +36,7 @@ public class Lexi_chatbot extends AppCompatActivity {
     private EditText editText;
     private final int USER = 0;
     private final int BOT = 1;
+    private static final String TAG = "lexi";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,8 +118,6 @@ public class Lexi_chatbot extends AppCompatActivity {
                 Toast.makeText(Lexi_chatbot.this,""+t.getMessage(),Toast.LENGTH_SHORT).show();
             }
         });
-
-
     }
     private void showTextView(String message, int type) {
         LinearLayout chatLayout = findViewById(R.id.chat_layout);
@@ -156,6 +156,47 @@ public class Lexi_chatbot extends AppCompatActivity {
     FrameLayout getBotLayout() {
         LayoutInflater inflater = LayoutInflater.from(Lexi_chatbot.this);
         return (FrameLayout) inflater.inflate(R.layout.bot, null);
+    }
+
+    public void sendHardcodedMessage() {
+        UserMessage userMessage = null;
+        MessageSender messageSender;
+        String msg = "summarize";
+        OkHttpClient okHttpClient = new OkHttpClient();
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("http://45f5d6874e11.ngrok.io/webhooks/rest/")
+                .client(okHttpClient)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        if (msg.trim().isEmpty()) {
+            Toast.makeText(Lexi_chatbot.this, "Please enter your query!", Toast.LENGTH_LONG).show();
+        } else {
+            showTextView(msg, USER);
+            editText.setText("");
+
+            userMessage = new UserMessage("User",msg);
+        }
+        Toast.makeText(Lexi_chatbot.this, ""+userMessage.getMessage(), Toast.LENGTH_LONG).show();
+        messageSender = retrofit.create(MessageSender.class);
+        Call<List<BotResponse>> response = messageSender.sendMessage(userMessage);
+        response.enqueue(new Callback<List<BotResponse>>() {
+            @Override
+            public void onResponse(Call<List<BotResponse>> call, Response<List<BotResponse>> response) {
+                if(response.body() == null || response.body().size() == 0){
+                    showTextView("Sorry didn't understand",BOT);
+                }
+                else{
+                    BotResponse botResponse = response.body().get(0);
+                    showTextView(botResponse.getText(),BOT);
+                }
+            }
+            @Override
+            public void onFailure(Call<List<BotResponse>> call, Throwable t) {
+                showTextView("Waiting for message",BOT);
+                Toast.makeText(Lexi_chatbot.this,""+t.getMessage(),Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
 
